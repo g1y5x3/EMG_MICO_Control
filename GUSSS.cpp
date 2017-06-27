@@ -34,9 +34,11 @@
 #include "spi.h"
 #include "ads1256.h"
 #include "GUSSS.h"
+#include <itpp/itbase.h>
+#include <cmath>
 
-//using namespace std;
-//using namespace itpp;
+using namespace std;
+using namespace itpp;
 
 // ------------------------------- GUSSS functions -----------------------------------------
 
@@ -2797,22 +2799,42 @@ int get_GR_features_MM(mat *data, mat *Sigs, mat *gr_ave, mat *gr_cov, mat *gr_a
 	int S = (*Sigs).rows();		// total number of signatures
 	//double gr_max, gr_min;		// for the change of scale
 	vec temp;
+    double tmp_gr;
 	*gr_all = zeros(N,S);		// initialize matrix
 
 	// Analysis and ratios for all signatures, for all training signals
 	for(n = 0; n < N; n++)
 	{
 		for(i = 0; i < S; i++)
-		{	// get the GUSSS ratio of the nth signal (Y), for al S signatures (Sp)
-			(*gr_all)(n,i)=GUSSS_ratio_EMG_MM((*data).get_rows(n,n),(*Sigs).get_rows(i,i));
+		{	// get the GUSSS ratio of the nth signal (Y), for al S signatures (Sp)	
+//            tmp_gr = GUSSS_ratio_EMG_MM((*data).get_rows(n,n),(*Sigs).get_rows(i,i));
+            tmp_gr = GUSSS_ratio_EMG_v2((*data).get_rows(n,n),(*Sigs).get_rows(i,i));
+            if( isnan(tmp_gr) )
+            {
+                (*gr_all)(n,i) = 0.01;
+                cout <<"not a number detected! "<< (*gr_all)(n,i) << endl; 
+            }
+            else
+                (*gr_all)(n,i) = tmp_gr;
+
+//            (*gr_all)(n,i)=GUSSS_ratio_EMG_MM((*data).get_rows(n,n),(*Sigs).get_rows(i,i));
 		}
 		temp = (*gr_all).get_row(n);
 		//gr_max = max(temp);
 		//gr_min = min(temp);
 		//(*gr_all).set_row(n,(temp - gr_min*ones(S))/(gr_max - gr_min));
 		(*gr_all).set_row(n,temp/max(temp));	// normalize
+
 	}
 
+    cout << *gr_all << endl;
+//    //print the GR for check
+//    for(n = 0; n < N; n++)
+//    {
+//        for(i = 0; i < S; i++)
+//            printf("%1.7e ", gr_all(n,i));
+//        printf("\n");
+//    } 
 	// get statistics and return whether the covariance matrix is invertible or not
 	return(get_Mu_and_Sigma(gr_all, gr_ave, gr_cov, BIAS_OPT));
 }

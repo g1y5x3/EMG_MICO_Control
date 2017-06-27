@@ -57,13 +57,13 @@
 #define NOISE_WIN					150				// Set to have approx.  ~ 150 ms  // when sampling
 #define THR_WIN						2000			// For the threshold window. Set to ~ 2 sec.
 #define SIG_FIRST_PART	 			90				// Go back from the flagindex, count as signal pts.
-#define HIGH_THR_FACTOR				1.8				// Moving average window threshold
-#define LOW_THR_FACTOR				1.2
+#define HIGH_THR_FACTOR				1.9				// Moving average window threshold
+#define LOW_THR_FACTOR				1.35
 
 //---------- Training and testing configuration ----------
 #define NUMBER_CHANNELS				1				// the number of channels being used
 #define MAX_SIG						5				// maximum possible number of signatures
-#define NRS 		    			2				// default number of signatures, previously it was 4
+#define NRS 		    			4				// default number of signatures, previously it was 4
 #define TRAIN_SAMPLES				20				// suggested training sample is 20 per gesture
 #define MAX_NR_TR		   			20				// maximum number of training signals allowed
 #define SIG_DURATION	            500				// default signal length, in mili-seconds
@@ -606,7 +606,7 @@ int main(int argc, char **argv)
 					int rep_num;
 					
 #if PRINTF > 0
-					std::cout << "Testing for Gesture " << ges_num + 1 << endl; 
+					std::cout << "Testing for Gesture " << ges_num+1  << endl; 
 					fflush(stdout);
 #endif
 						
@@ -730,11 +730,16 @@ int main(int argc, char **argv)
 												   zc_aves, zc_covs, gr_aves, gr_covs, &segD,
 												   &feat_wgts, zc_thr, &conf, cl_opt);
 
+                        if(movement == 0)
+                            movement = 4;
+
 						printf("Movement: %d\n\n", movement);
 						fflush(stdout);
 							
-						if(movement != (ges_num + 1) % 4)
+						if(movement != (ges_num+1))
 							err_num[ges_num]++;
+
+                        sleep(0.5);
 													
 					}
 					
@@ -746,7 +751,7 @@ int main(int argc, char **argv)
 				
 				for(ges_num = 0; ges_num < tot_ges_num; ges_num++)
 				{
-						std::cout << "Gesture " << ges_num << " has " << err_num[ges_num] << " error!";
+						std::cout << "Gesture " << ges_num+1<< " has " << err_num[ges_num] << " error!";
 						std::cout << " Accuracy is:" << (double)(tot_rep_num - err_num[ges_num]) / tot_rep_num * 100 << "%" << endl;
 				}
 				

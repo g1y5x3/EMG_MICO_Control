@@ -735,7 +735,8 @@ int main(int argc, char **argv)
 				while(1)		//use the same variable as in training mode
 				{
 #if PRINTF > 0
-					printf("Waiting for the gesture %d...\n", tot_rep_num - rep_num);
+					printf("Waiting for the gesture...\n");
+//					printf("Waiting for the gesture %d...\n", tot_rep_num - rep_num);
 					fflush(stdout);
 #endif
 
