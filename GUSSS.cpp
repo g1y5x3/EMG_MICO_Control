@@ -2674,6 +2674,7 @@ int get_training_parameters_MM(mat *data_all, ivec *segD, mat *Sigs, int S,
 		(*Sigs).set_row(k,(1/max(abs((*Sigs).get_row(k))))*(*Sigs).get_row(k));
 	}
 
+    cout << "Complete Getting signatures!" << endl;
 	*zc_thr = 0.0;		// initialize the threshold for the ZC calculations
 
 	// get MAV parameters
@@ -2688,7 +2689,9 @@ int get_training_parameters_MM(mat *data_all, ivec *segD, mat *Sigs, int S,
 			printf("\nProblem with the data, MAV covariance matrix is singular\n");
 			cov_errors |= MAV_COV_ERR;
 		}
+
 	}
+    cout << "Complete Getting MAVs" << endl;
 
 	// get the ZC and GR parameters
 	for(k = 0; k < S; k++)
@@ -2807,12 +2810,12 @@ int get_GR_features_MM(mat *data, mat *Sigs, mat *gr_ave, mat *gr_cov, mat *gr_a
 	{
 		for(i = 0; i < S; i++)
 		{	// get the GUSSS ratio of the nth signal (Y), for al S signatures (Sp)	
-//            tmp_gr = GUSSS_ratio_EMG_MM((*data).get_rows(n,n),(*Sigs).get_rows(i,i));
-            tmp_gr = GUSSS_ratio_EMG_v2((*data).get_rows(n,n),(*Sigs).get_rows(i,i));
+            tmp_gr = GUSSS_ratio_EMG_MM((*data).get_rows(n,n),(*Sigs).get_rows(i,i));
+//            tmp_gr = GUSSS_ratio_EMG_v2((*data).get_rows(n,n),(*Sigs).get_rows(i,i));
             if( isnan(tmp_gr) )
             {
                 (*gr_all)(n,i) = 0.01;
-                cout <<"not a number detected! "<< (*gr_all)(n,i) << endl; 
+                cout <<"not a number detected! n = "<< n <<" i = " << i << endl; 
             }
             else
                 (*gr_all)(n,i) = tmp_gr;
@@ -3245,8 +3248,11 @@ double GUSSS_ratio_EMG_MM(mat Y, mat Sp)
 	mat A_init = ones(3,3); // for some reason, initializing as 2x2 matrix doesn't work
 
 	// Initial guess for the mixing matrix
-	A_init(0,0) = 1.0;	A_init(0,1) = 0.0;
-	A_init(1,0) = 0.0;	A_init(1,1) = 1.0;
+//	A_init(0,0) = 1.0;	A_init(0,1) = 0.0;
+//	A_init(1,0) = 0.0;	A_init(1,1) = 1.0;
+
+	A_init(0,0) = 0.0;	A_init(0,1) = 1.0;
+	A_init(1,0) = 1.0;	A_init(1,1) = 0.0;
 
 	// constructs Mix matrices to be ICA-analyzed [Y; Sp + Y]
 	Mix.set_rows(0,Y);
@@ -3258,8 +3264,10 @@ double GUSSS_ratio_EMG_MM(mat Y, mat Sp)
 	// Analysis and ratios for all signatures
 	Test.set_non_linearity(FICA_NONLIN_GAUSS);	// Set GAUSS non-linearity
 	Test.set_approach(FICA_APPROACH_DEFL);	// Use deflation approach: IC computed 1 by 1
-	Test.set_max_num_iterations(MAX_ITER);	// 100
-	Test.set_epsilon(EPSILON);				// 0.01
+//	Test.set_max_num_iterations(MAX_ITER);	// 100
+	Test.set_max_num_iterations(200);	// 100
+//	Test.set_epsilon(EPSILON);				// 0.01
+	Test.set_epsilon(0.0001);				// 0.01
 	Test.set_init_guess(A_init);			// there is a bug with this function...
 
 	Test.separate();	// Perform ICA
@@ -3270,11 +3278,13 @@ double GUSSS_ratio_EMG_MM(mat Y, mat Sp)
 
 	if(nrIC == 0)
 	{
-		ratio = 100.0;
+//		ratio = 100.0;
+		ratio = 0.25 * randu();
 	}
 	else if(nrIC == 1)
 	{
-		ratio = 0.0;
+//		ratio = 0.0;
+		ratio = 0.25 * randu();
 	}
 	else
 	{	// get normalization values
@@ -3293,7 +3303,9 @@ double GUSSS_ratio_EMG_MM(mat Y, mat Sp)
 		error0 = sum(abs(abs(Sp.get_row(0)) - abs(icasig.get_row(0))));
 		error1 = sum(abs(abs(Sp.get_row(0)) - abs(icasig.get_row(1))));
 
-		if(error0 <= error1)
+        if(A(0,0) == 0 || A(0,1) == 0)
+            ratio = 50 * randu();
+        else if(error0 <= error1)
 			ratio = abs(A(0,1)/A(0,0));   // Sp matches icasig0, cp is in the 1st column
 		else
 			ratio = abs(A(0,0)/A(0,1));   // Sp matches icasig1, cp is in the 2nd column
