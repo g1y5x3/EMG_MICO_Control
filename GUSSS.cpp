@@ -3304,7 +3304,10 @@ double GUSSS_ratio_EMG_MM(mat Y, mat Sp)
 		error1 = sum(abs(abs(Sp.get_row(0)) - abs(icasig.get_row(1))));
 
         if(A(0,0) == 0 || A(0,1) == 0)
+        {
             ratio = 50 * randu();
+            cout << "Divided by zero occurs!" << endl;
+        }
         else if(error0 <= error1)
 			ratio = abs(A(0,1)/A(0,0));   // Sp matches icasig0, cp is in the 1st column
 		else
