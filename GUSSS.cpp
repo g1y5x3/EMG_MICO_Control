@@ -3264,10 +3264,10 @@ double GUSSS_ratio_EMG_MM(mat Y, mat Sp)
 	// Analysis and ratios for all signatures
 	Test.set_non_linearity(FICA_NONLIN_GAUSS);	// Set GAUSS non-linearity
 	Test.set_approach(FICA_APPROACH_DEFL);	// Use deflation approach: IC computed 1 by 1
-//	Test.set_max_num_iterations(MAX_ITER);	// 100
-	Test.set_max_num_iterations(200);	// 100
-//	Test.set_epsilon(EPSILON);				// 0.01
-	Test.set_epsilon(0.0001);				// 0.01
+	Test.set_max_num_iterations(MAX_ITER);	// 100
+//	Test.set_max_num_iterations(200);	// 100
+	Test.set_epsilon(EPSILON);				// 0.01
+//	Test.set_epsilon(0.0001);				// 0.01
 	Test.set_init_guess(A_init);			// there is a bug with this function...
 
 	Test.separate();	// Perform ICA
@@ -3305,7 +3305,7 @@ double GUSSS_ratio_EMG_MM(mat Y, mat Sp)
 
         if(A(0,0) == 0 || A(0,1) == 0)
         {
-            ratio = 50 * randu();
+            ratio = 25 * randu();
             cout << "Divided by zero occurs!" << endl;
         }
         else if(error0 <= error1)
