@@ -56,15 +56,15 @@
 //---------- Moving average window ----------
 #define NOISE_WIN					150				// Set to have approx.  ~ 150 ms  // when sampling
 #define THR_WIN						2000			// For the threshold window. Set to ~ 2 sec.
-#define SIG_FIRST_PART	 			90				// Go back from the flagindex, count as signal pts.
-#define HIGH_THR_FACTOR				1.9				// Moving average window threshold
-#define LOW_THR_FACTOR				1.35
+#define SIG_FIRST_PART	 			100				// Go back from the flagindex, count as signal pts.
+#define HIGH_THR_FACTOR				1.8				// Moving average window threshold
+#define LOW_THR_FACTOR				1.5
 
 //---------- Training and testing configuration ----------
 #define NUMBER_CHANNELS				1				// the number of channels being used
 #define MAX_SIG						5				// maximum possible number of signatures
-#define NRS 		    			4				// default number of signatures, previously it was 4
-#define TRAIN_SAMPLES				1				// suggested training sample is 20 per gesture
+#define NRS 		    			1				// default number of signatures, previously it was 4
+#define TRAIN_SAMPLES				5				// suggested training sample is 20 per gesture
 #define MAX_NR_TR		   			20				// maximum number of training signals allowed
 #define SIG_DURATION	            500				// default signal length, in mili-seconds
 #define BUFFER_SIZE					3750			// Circular Buffer size
@@ -138,6 +138,8 @@ int main(int argc, char **argv)
 	int     thr_win = round_i(THR_WIN*SAMPLING_FACTOR);					// threshold window, 2 seconds worth of data
 	float 	average_signal;												// average signal to center the samples for the gesture 
 	
+    char *gesture_names[5] = {(char*)"Stop", (char*)"Left", (char*)"Right",(char*)"Forward", (char*)"Backward"};
+
 	// --- Final Gesture Variables for training/Reconigton ---
 	mat 	emg_signal;							
 	mat 	data_all[MAX_SIG];
@@ -160,6 +162,8 @@ int main(int argc, char **argv)
 	int cl_opt = 0;								// classification option (0 - distance, 1 - confidence)
 	char mode = 'e';							// default mode (exit)
 
+	FILE *fdata_all = NULL;
+    char fullname[100];
 
 // ---------------- Allocating Memories for the gesture variables ----------------
 
@@ -479,43 +483,65 @@ int main(int argc, char **argv)
 					sleep(1);	// A small pause to avoid misreadings...
 
 				} //end of main training loop
-				
+    
+                // Save the current training files                
+            	sprintf(fullname, "mkdir -m o-w /home/pi/EMG_MICO/Training/%s\n", directory);
+	            k = system(fullname);	// creates directory if it does not exist
+
+		        sprintf(fullname, "/home/pi/EMG_MICO/Training/%s/%s_%03d.txt", directory, gesture_names[g], i+1);
+                fdata_all = fopen(fullname, "r");
+
+                for(i = 0; i < N; i++)
+                {
+                    sprintf(fullname, "/home/pi/EMG_MICO/Training/%s/%s_%03d.txt", directory, gesture_names[g], i+1);
+                
+                    fdata_all = fopen(fullname, "w");
+                    
+                    for(k = 0; k < L; k++)	// samples' loop
+                    {
+                        fprintf(fdata_all, "%+1.7e\n", data_all[g](i,k));
+                    }
+                    fclose(fdata_all);
+        
+                }
+
+
 				
 			} //end of gesture loop
 			
-			// ----- Calculate Signatures and other training parameters -----
-			
-#if PRINTF > 0
-			printf("\nCalculating the Parameters for the Signatures.\n");
-			fflush(stdout);
-#endif
-			// get the index vector for the segments.
-			segD = zeros_i(D+1);
-			for(i = 0; i <= D; i++)
-				segD(i) = round_i(1.0 * i * L / D);
-
-			// the following calculates all training parameters and saves everything into
-			// files. The parameters will be available in all those matrices, so there is no
-			// need to exit the program. I just need to go to either the use, the smooth or
-			// the classification mode.
-			i = get_training_parameters_MM(data_all,&segD, &Sigs,S,mav_aves,mav_covs,zc_aves,
-					zc_covs, gr_aves, gr_covs, &zc_thr, &feat_wgts, weightOpt, directory);
-					
-			if(i < 0)
-			{
-				perror("Calculation of signatures and training parameters failed\n");
-				exit(-1);
-			}
-			if(i > 0)
-			{
-				printf("There was a problem with the covariances: %d\n", i);
-				exit(-1);
-			}
-
-#if PRINTF > 0
-			printf("Finished Getting the Signatures.\n");
-			fflush(stdout);
-#endif
+//			// ----- Calculate Signatures and other training parameters -----
+//			
+//#if PRINTF > 0
+//			printf("\nCalculating the Parameters for the Signatures.\n");
+//			fflush(stdout);
+//#endif
+//			// get the index vector for the segments.
+//			segD = zeros_i(D+1);
+//			for(i = 0; i <= D; i++)
+//				segD(i) = round_i(1.0 * i * L / D);
+//
+//			// the following calculates all training parameters and saves everything into
+//			// files. The parameters will be available in all those matrices, so there is no
+//			// need to exit the program. I just need to go to either the use, the smooth or
+//			// the classification mode.
+//			i = get_training_parameters_MM(data_all,&segD, &Sigs,S,mav_aves,mav_covs,zc_aves,
+//					zc_covs, gr_aves, gr_covs, &zc_thr, &feat_wgts, weightOpt, directory);
+//					
+//			if(i < 0)
+//			{
+//				perror("Calculation of signatures and training parameters failed\n");
+//				exit(-1);
+//			}
+//			if(i > 0)
+//			{
+//				printf("There was a problem with the covariances: %d\n", i);
+//				exit(-1);
+//			}
+//
+//#if PRINTF > 0
+//			printf("Finished Getting the Signatures.\n");
+//			fflush(stdout);
+//#endif
 
 			// Free the matrices containing all the training signals. Not needed anymore
 			for(g = 0; g < S; g++)		// 3, 4 or 5

@@ -67,8 +67,8 @@
 //---------- Training and testing configuration ----------
 #define NUMBER_CHANNELS				1				// the number of channels being used
 #define MAX_SIG						5				// maximum possible number of signatures
-#define NRS 		    			2				// default number of signatures, previously it was 4
-#define TRAIN_SAMPLES				20				// suggested training sample is 20 per gesture
+#define NRS 		    			4				// default number of signatures, previously it was 4
+#define TRAIN_SAMPLES				10				// suggested training sample is 20 per gesture
 #define MAX_NR_TR		   			20				// maximum number of training signals allowed
 #define SIG_DURATION	            500				// default signal length, in mili-seconds
 #define BUFFER_SIZE					3750			// Circular Buffer size
@@ -590,7 +590,7 @@ int main(int argc, char **argv)
 				error("ERROR opening socket");
     
 				// The variable argv[1] contains the name of a host on the internet
-				server = gethostbyname("10.14.1.249");
+				server = gethostbyname("10.14.1.235");
 				if (server == NULL) 
 				{
 					fprintf(stderr,"ERROR, no such host\n");
@@ -624,7 +624,7 @@ int main(int argc, char **argv)
 				// Calculate the average noise to center the signal
 				average_noise = average_noise / buffer_size;	
 							
-				// int movement = 0;
+				int movement = 0;
 
 				emg_signal = zeros(1,L); 					// need to be changed from vector to matrix
 				mat conf = ones(S,1);
@@ -757,41 +757,38 @@ int main(int argc, char **argv)
 					fflush(stdout);
 #endif
 				
-					gesture = EMG_classify_MM(emg_signal, &Sigs, mav_aves, mav_covs,
+					movement = EMG_classify_MM(emg_signal, &Sigs, mav_aves, mav_covs,
 											   zc_aves, zc_covs, gr_aves, gr_covs, &segD,
 											   &feat_wgts, zc_thr, &conf, cl_opt);
-					printf("Gesture: %d\n\n", gesture);
-
-					switch (gesture) {
+					printf("Movement: %d\n\n", movement);
+					fflush(stdout);
+					bzero(buffer_socket, 10);
+					
+					switch(movement)
+					{
 						case 1:
-							x_dir = x_dir * -1;
-							moving_status = 1;                
+							buffer_socket[0] = '1';
 							break;
 						case 2:
-							y_dir = y_dir * -1;
-							moving_status = 1;
+							buffer_socket[0] = '2';
 							break;
 						case 3:
-							z_dir = z_dir * -1;
-							moving_status = 1;
+							buffer_socket[0] = '3';
 							break;
-						case 4:
-							pos = arm->get_ang_pos();
-							if(moving_status == 1)
-								moving_status = 0;
-							else {
-								moving_status = 0;
-								finger_dir = finger_dir * -1;
-							}
-							break;
+						case 0:
+							buffer_socket[0] = '4';
+							break;														
 						default:
 							break;
-					}                       
+					}
+					
+					write(sockfd, buffer_socket, strlen(buffer_socket));					
 
+                    usleep(50);
 				} 
 				// end of while(1)
 				
-                gesture = 5;				
+                movement = 5;				
 				mode = 'e';		// exit the program		
 				
 			}// end of if statement to determine if mode was 'r'

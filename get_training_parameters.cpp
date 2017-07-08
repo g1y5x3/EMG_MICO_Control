@@ -22,7 +22,7 @@ using namespace std;
 using namespace itpp;
 
 
-#define MAX_SIG						4444				// maximum possible number of signatures
+#define MAX_SIG						5				// maximum possible number of signatures
 #define NRS 		    			4				// default number of signatures, previously it was 4
 #define WGTS_OPT					0				// feature weights' option (0/same, 1/different)
 
@@ -36,7 +36,7 @@ int main(int argc, char **argv)
 	mat 	data_all[MAX_SIG];
 	
 	// ----- Training Parameters -----
-    int N = 20;
+    int N = 10;
     int L = 1875;    
     ivec 	segD;
 	int 	S = NRS;							// default number of signatures considered (3 or 4)
@@ -50,7 +50,7 @@ int main(int argc, char **argv)
 	double 	zc_thr;
 	vec 	feat_wgts;
 	int 	weightOpt = WGTS_OPT;				// default option for feature weights (Don't use them)
-
+    int     num_class = 4;                      // default number of training classes
 	int 	D = 3;								// default number of segments for the signals.
     // ----- File Variables -----
 	FILE *fdata_all = NULL;
@@ -67,11 +67,12 @@ int main(int argc, char **argv)
 			sprintf(directory, "%s", argv[i+1]);
 			i = i + 2; 
 		}
+        
 		else
 			i++;
 
 	}
-
+    
     for(int g = 0; g < 4; g++)
     {
         // Initialize the data variable 
@@ -80,13 +81,12 @@ int main(int argc, char **argv)
         for(i = 0; i < N; i++)
         {
 		    sprintf(fullname, "/home/pi/EMG_MICO/Training/%s/%s_%03d.txt", directory, gesture_names[g], i+1);
-//		    sprintf(fullname, "/home/pi/EMG_MICO/Training/Yixiang_eyebrow/%s_%03d.txt",  gesture_names[g], i+1);
             
             fdata_all = fopen(fullname, "r");
 				
             for(int k = 0; k < L; k++)	// samples' loop
 			{
-				fscanf(fdata_all, "%f", &temp);
+				fprintf(fdata_all, "%f", &temp);
                 data_all[g](i,k) = temp;
 			}
 			fclose(fdata_all);
