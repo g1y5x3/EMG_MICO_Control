@@ -39,7 +39,7 @@ int main(int argc, char **argv)
     int N;
     int L = 1875;    
     ivec 	segD;
-	int 	S = NRS;							// default number of signatures considered (3 or 4)
+	int 	S;							// default number of signatures considered (3 or 4)
 	mat 	Sigs;
 	mat 	mav_aves[MAX_SIG];
 	mat 	mav_covs[MAX_SIG];
@@ -54,11 +54,14 @@ int main(int argc, char **argv)
 	int 	D = 3;								// default number of segments for the signals.
     // ----- File Variables -----
 	FILE *fdata_all = NULL;
+	FILE *flabel = NULL;
     char fullname[100];
-    char *gesture_names[5] = {(char*)"Stop", (char*)"Left", (char*)"Right",(char*)"Forward", (char*)"Backward"};
+    char *gesture_names[5] = {(char*)"Gesture1", (char*)"Gesture2", (char*)"Gesture3",(char*)"Gesture4", (char*)"Gesture5"};
     float temp = 0.0;
 
     int i = 1;
+    int labels[5];
+    int temp_index;
     // ----- Reading Inputs
     while (i < argc) 
 	{
@@ -75,28 +78,40 @@ int main(int argc, char **argv)
     
     printf("The number of training data for each gesture:");
     scanf("%d", &N);
+    printf("The number of gestures:");
+    scanf("%d", &S);
 
-    for(int g = 0; g < 4; g++)
+    printf("Assign labels:\n");
+    printf("Gesture1:");
+    scanf("%d",&labels[0]);
+    printf("Gesture2:");
+    scanf("%d",&labels[1]);
+    printf("Gesture3:");
+    scanf("%d",&labels[2]);
+    printf("Gesture4:");
+    scanf("%d",&labels[3]);
+
+    for(int g = 0; g < S; g++)
     {
-        // Initialize the data variable 
-        data_all[g] = zeros(N,L);
+        // Initialize the data variable
+        temp_index = labels[g] - 1;
+        data_all[temp_index] = zeros(N,L);
         
         for(i = 0; i < N; i++)
         {
 		    sprintf(fullname, "/home/pi/EMG_MICO/Training/%s/%s_%03d.txt", directory, gesture_names[g], i+1);
-            
             fdata_all = fopen(fullname, "r");
 				
             for(int k = 0; k < L; k++)	// samples' loop
 			{
 				fscanf(fdata_all, "%f", &temp);
-                data_all[g](i,k) = temp;
+                data_all[temp_index](i,k) = temp;
 			}
 			fclose(fdata_all);
 	
         }
 
-        cout << data_all[g] << endl;
+//        cout << data_all[g] << endl;
 
     }
 
@@ -108,6 +123,15 @@ int main(int argc, char **argv)
 
 
     i = get_training_parameters_MM(data_all,&segD, &Sigs,S,mav_aves,mav_covs,zc_aves, zc_covs, gr_aves, gr_covs, &zc_thr, &feat_wgts, weightOpt, directory);
+  
+    // Save all the label assignments
+	sprintf(fullname, "/home/pi/EMG_MICO/Training/%s/Param/label_map.txt", directory);
+    flabel = fopen(fullname, "w");
+    for(i = 0; i < S; i++)
+        fprintf(flabel, "%d\n", labels[i]);
+
+    fclose(flabel);
+
     printf("Finished Getting Training Parameters!\n");
 
 	return 0;

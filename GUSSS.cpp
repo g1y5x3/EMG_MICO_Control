@@ -2864,13 +2864,12 @@ int save_to_files_MM(char directory[], int S, int D, int L, int N, double zc_thr
 	FILE *fmav_aves = NULL, *fmav_covs = NULL, *fzc_aves = NULL, *fzc_covs = NULL;
 	FILE *fgr_aves = NULL, *fgr_covs = NULL;
 
-	char *gesture_names[5] = {(char*)"Stop", (char*)"Left", (char*)"Right",
-							  (char*)"Forward", (char*)"Backward"};
+	char *gesture_names[5] = {(char*)"Gesture1", (char*)"Gesture2", (char*)"Gesture3", (char*)"Gesture4", (char*)"Gesture5"};
 
 	// Creates the directory if it doesn't exist already (if if does, a message saying
 	// "mkdir: cannot create directory `../../Training/directory_name': File exists"
 	// will be displayed.
-	sprintf(fullname, "mkdir -m o-w /home/pi/EMG_MICO/Training/%s\n", directory);
+	sprintf(fullname, "mkdir -m o-w /home/pi/EMG_MICO/Training/%s/Param\n", directory);
 	k = system(fullname);	// creates directory if it does not exist
 
 	// First, remove old training files (if they exist)
@@ -2878,13 +2877,13 @@ int save_to_files_MM(char directory[], int S, int D, int L, int N, double zc_thr
 	{
 		strcpy(filename, gesture_names[i]);
 		memset(fullname, 0, FNBUFFER);
-		sprintf(fullname, "rm /home/pi/EMG_MICO/Training/%s/*\n", directory);
+		sprintf(fullname, "rm /home/pi/EMG_MICO/Training/%s/Param/*\n", directory);
 		k = system(fullname);
 	}
 
 	// Write the number of training signals to a file -----------------------------------
 	memset(fullname, 0, FNBUFFER);
-	sprintf(fullname, "/home/pi/EMG_MICO/Training/%s/nr_training.txt", directory);
+	sprintf(fullname, "/home/pi/EMG_MICO/Training/%s/Param/nr_training.txt", directory);
 	fnr = fopen(fullname, "w");
 	if(fnr == 0)
 	{
@@ -2896,7 +2895,7 @@ int save_to_files_MM(char directory[], int S, int D, int L, int N, double zc_thr
 
 	// Write the number of segments to a file -------------------------------------------
 	memset(fullname, 0, FNBUFFER);
-	sprintf(fullname, "/home/pi/EMG_MICO/Training/%s/nr_segments.txt", directory);
+	sprintf(fullname, "/home/pi/EMG_MICO/Training/%s/Param/nr_segments.txt", directory);
 	fnr = fopen(fullname, "w");
 	if(fnr == 0)
 	{
@@ -2908,7 +2907,7 @@ int save_to_files_MM(char directory[], int S, int D, int L, int N, double zc_thr
 
 	// Write the number of data-points to a file. Needed for "use" and "test" modes -----
 	memset(fullname, 0, FNBUFFER);
-	sprintf(fullname, "/home/pi/EMG_MICO/Training/%s/nr_signalpoints.txt", directory);
+	sprintf(fullname, "/home/pi/EMG_MICO/Training/%s/Param/nr_signalpoints.txt", directory);
 	fnr = fopen(fullname, "w");
 	if(fnr == 0)
 	{
@@ -2920,7 +2919,7 @@ int save_to_files_MM(char directory[], int S, int D, int L, int N, double zc_thr
 
 	// Write the number of signatures to a file. Needed for "use" and "test" modes ------
 	memset(fullname, 0, FNBUFFER);
-	sprintf(fullname, "/home/pi/EMG_MICO/Training/%s/nr_signatures.txt", directory);
+	sprintf(fullname, "/home/pi/EMG_MICO/Training/%s/Param/nr_signatures.txt", directory);
 	fnr = fopen(fullname, "w");
 	if(fnr == 0)
 	{
@@ -2932,7 +2931,7 @@ int save_to_files_MM(char directory[], int S, int D, int L, int N, double zc_thr
 
 	// Write the ZC threshold to a file. Needed for "use" and "test" modes --------------
 	memset(fullname, 0, FNBUFFER);
-	sprintf(fullname, "/home/pi/EMG_MICO/Training/%s/zc_threshold.txt", directory);
+	sprintf(fullname, "/home/pi/EMG_MICO/Training/%s/Param/zc_threshold.txt", directory);
 	fnr = fopen(fullname, "w");
 	if(fnr == 0)
 	{
@@ -2944,7 +2943,7 @@ int save_to_files_MM(char directory[], int S, int D, int L, int N, double zc_thr
 
 	// Open file to store signatures ----------------------------------------------------
 	memset(fullname, 0, FNBUFFER);
-	sprintf(fullname,"/home/pi/EMG_MICO/Training/%s/signatures1.txt", directory);
+	sprintf(fullname,"/home/pi/EMG_MICO/Training/%s/Param/signatures1.txt", directory);
 	fsign = fopen(fullname, "w");
 	if(fsign == 0)
 	{
@@ -2953,7 +2952,7 @@ int save_to_files_MM(char directory[], int S, int D, int L, int N, double zc_thr
 	}
 	// Open file to store mav_aves-------------------------------------------------------
 	memset(fullname, 0, FNBUFFER);
-	sprintf(fullname,"/home/pi/EMG_MICO/Training/%s/mav_aves.txt", directory);
+	sprintf(fullname,"/home/pi/EMG_MICO/Training/%s/Param/mav_aves.txt", directory);
 	fmav_aves = fopen(fullname, "w");
 	if(fmav_aves == 0)
 	{
@@ -2964,7 +2963,7 @@ int save_to_files_MM(char directory[], int S, int D, int L, int N, double zc_thr
 	if((cov_errors & MAV_COV_ERR) == 0)	// if no error when getting MAV cov. matrix
 	{
 		memset(fullname, 0, FNBUFFER);
-		sprintf(fullname,"/home/pi/EMG_MICO/Training/%s/mav_covs.txt", directory);
+		sprintf(fullname,"/home/pi/EMG_MICO/Training/%s/Param/mav_covs.txt", directory);
 		fmav_covs = fopen(fullname, "w");
 		if(fmav_covs == 0)
 		{
@@ -2974,7 +2973,7 @@ int save_to_files_MM(char directory[], int S, int D, int L, int N, double zc_thr
 	}
 	// Open file to store zc_aves -------------------------------------------------------
 	memset(fullname, 0, FNBUFFER);
-	sprintf(fullname,"/home/pi/EMG_MICO/Training/%s/zc_aves.txt", directory);
+	sprintf(fullname,"/home/pi/EMG_MICO/Training/%s/Param/zc_aves.txt", directory);
 	fzc_aves = fopen(fullname, "w");
 	if(fzc_aves == 0)
 	{
@@ -2985,7 +2984,7 @@ int save_to_files_MM(char directory[], int S, int D, int L, int N, double zc_thr
 	if((cov_errors & ZC_COV_ERR) == 0)	// if no error when getting ZC cov. matrix
 	{
 		memset(fullname, 0, FNBUFFER);
-		sprintf(fullname,"/home/pi/EMG_MICO/Training/%s/zc_covs.txt", directory);
+		sprintf(fullname,"/home/pi/EMG_MICO/Training/%s/Param/zc_covs.txt", directory);
 		fzc_covs = fopen(fullname, "w");
 		if(fzc_covs == 0)
 		{
@@ -2995,7 +2994,7 @@ int save_to_files_MM(char directory[], int S, int D, int L, int N, double zc_thr
 	}
 	// Open file to store gr_aves -------------------------------------------------------
 	memset(fullname, 0, FNBUFFER);
-	sprintf(fullname,"/home/pi/EMG_MICO/Training/%s/gr_aves.txt", directory);
+	sprintf(fullname,"/home/pi/EMG_MICO/Training/%s/Param/gr_aves.txt", directory);
 	fgr_aves = fopen(fullname, "w");
 	if(fgr_aves == 0)
 	{
@@ -3006,7 +3005,7 @@ int save_to_files_MM(char directory[], int S, int D, int L, int N, double zc_thr
 	if((cov_errors & GR_COV_ERR) == 0)	// if no error when getting GR cov. matrix
 	{
 		memset(fullname, 0, FNBUFFER);
-		sprintf(fullname,"/home/pi/EMG_MICO/Training/%s/gr_covs.txt", directory);
+		sprintf(fullname,"/home/pi/EMG_MICO/Training/%s/Param/gr_covs.txt", directory);
 		fgr_covs = fopen(fullname, "w");
 		if(fgr_covs == 0)
 		{
@@ -3016,7 +3015,7 @@ int save_to_files_MM(char directory[], int S, int D, int L, int N, double zc_thr
 	}
 	// Open file to store feat_wgts -----------------------------------------------------
 	memset(fullname, 0, FNBUFFER);
-	sprintf(fullname,"/home/pi/EMG_MICO/Training/%s/feat_weights.txt", directory);
+	sprintf(fullname,"/home/pi/EMG_MICO/Training/%s/Param/feat_weights.txt", directory);
 	ffeat_wgts = fopen(fullname, "w");
 	if(ffeat_wgts == 0)
 	{
@@ -3076,7 +3075,7 @@ int save_to_files_MM(char directory[], int S, int D, int L, int N, double zc_thr
 	{
 		fprintf(ffeat_wgts, "%1.2f  ", (*feat_wgts)(i));
 	}
-
+/*
 	// All training samples
 	for(i = 0; i < S; i++)	// gestures' loop
 	{
@@ -3094,7 +3093,7 @@ int save_to_files_MM(char directory[], int S, int D, int L, int N, double zc_thr
 			fclose(fdata_all);
 		}
 	}
-
+*/
 	// close all the files that remain open ---------------------------------------------
 	fclose(fmav_aves);	fclose(fzc_aves);	fclose(fgr_aves);
 	fclose(fsign);		fclose(ffeat_wgts);
@@ -3103,7 +3102,7 @@ int save_to_files_MM(char directory[], int S, int D, int L, int N, double zc_thr
 	if(fgr_covs != 0)	fclose(fgr_covs);
 
 	// This is just to allow the group to modify the files just created -----------------
-	sprintf(fullname, "chmod g+w -R /home/pi/EMG_MICO/Training/%s\n", directory);
+	sprintf(fullname, "chmod g+w -R /home/pi/EMG_MICO/Training/%s/Param\n", directory);
 	k = system(fullname);
 	k++;	// this is just to avoid an annoying warning...
 
@@ -3425,7 +3424,7 @@ int get_parameters_from_files_MM(char directory[], int *S, int *D, int *L, doubl
 
 	// get the number of segments D -----------------------------------------------------
 	memset(fullname, 0, FNBUFFER);
-	sprintf(fullname, "/home/pi/EMG_MICO/Training/%s/nr_segments.txt", directory);
+	sprintf(fullname, "/home/pi/EMG_MICO/Training/%s/Param/nr_segments.txt", directory);
 	fnr = fopen(fullname, "r");
 	if(fnr == 0)
 	{
@@ -3439,7 +3438,7 @@ int get_parameters_from_files_MM(char directory[], int *S, int *D, int *L, doubl
 	}
 	// get the number of data points used for each signal -------------------------------
 	memset(fullname, 0, FNBUFFER);
-	sprintf(fullname, "/home/pi/EMG_MICO/Training/%s/nr_signalpoints.txt", directory);
+	sprintf(fullname, "/home/pi/EMG_MICO/Training/%s/Param/nr_signalpoints.txt", directory);
 	fnr = fopen(fullname, "r");
 	if(fnr == 0)
 	{
@@ -3453,7 +3452,7 @@ int get_parameters_from_files_MM(char directory[], int *S, int *D, int *L, doubl
 	}
 	// get the number of different signatures to be used/compared -----------------------
 	memset(fullname, 0, FNBUFFER);
-	sprintf(fullname, "/home/pi/EMG_MICO/Training/%s/nr_signatures.txt", directory);
+	sprintf(fullname, "/home/pi/EMG_MICO/Training/%s/Param/nr_signatures.txt", directory);
 	fnr = fopen(fullname, "r");
 	if(fnr == 0)
 	{
@@ -3467,7 +3466,7 @@ int get_parameters_from_files_MM(char directory[], int *S, int *D, int *L, doubl
 	}
 	// get the ZC threshold -------------------------------------------------------------
 	memset(fullname, 0, FNBUFFER);
-	sprintf(fullname, "/home/pi/EMG_MICO/Training/%s/zc_threshold.txt", directory);
+	sprintf(fullname, "/home/pi/EMG_MICO/Training/%s/Param/zc_threshold.txt", directory);
 	fnr = fopen(fullname, "r");
 	if(fnr == 0)
 	{
@@ -3483,7 +3482,7 @@ int get_parameters_from_files_MM(char directory[], int *S, int *D, int *L, doubl
 
 	// opens file with signatures -------------------------------------------------------
 	memset(fullname, 0, FNBUFFER);
-	sprintf(fullname,"/home/pi/EMG_MICO/Training/%s/signatures1.txt", directory);
+	sprintf(fullname,"/home/pi/EMG_MICO/Training/%s/Param/signatures1.txt", directory);
 	fsign = fopen(fullname, "r");
 	if(fsign == 0)
 	{
@@ -3492,7 +3491,7 @@ int get_parameters_from_files_MM(char directory[], int *S, int *D, int *L, doubl
 	}
 	// opens file to read mav_aves ------------------------------------------------------
 	memset(fullname, 0, FNBUFFER);
-	sprintf(fullname,"/home/pi/EMG_MICO/Training/%s/mav_aves.txt", directory);
+	sprintf(fullname,"/home/pi/EMG_MICO/Training/%s/Param/mav_aves.txt", directory);
 	fmav_aves = fopen(fullname, "r");
 	if(fmav_aves == 0)
 	{
@@ -3501,7 +3500,7 @@ int get_parameters_from_files_MM(char directory[], int *S, int *D, int *L, doubl
 	}
 	// opens file to read mav_covs ------------------------------------------------------
 	memset(fullname, 0, FNBUFFER);
-	sprintf(fullname,"/home/pi/EMG_MICO/Training/%s/mav_covs.txt", directory);
+	sprintf(fullname,"/home/pi/EMG_MICO/Training/%s/Param/mav_covs.txt", directory);
 	fmav_covs = fopen(fullname, "r");
 	if(fmav_covs == 0)
 	{
@@ -3510,7 +3509,7 @@ int get_parameters_from_files_MM(char directory[], int *S, int *D, int *L, doubl
 	}
 	// opens file to read zc_aves -------------------------------------------------------
 	memset(fullname, 0, FNBUFFER);
-	sprintf(fullname,"/home/pi/EMG_MICO/Training/%s/zc_aves.txt", directory);
+	sprintf(fullname,"/home/pi/EMG_MICO/Training/%s/Param/zc_aves.txt", directory);
 	fzc_aves = fopen(fullname, "r");
 	if(fzc_aves == 0)
 	{
@@ -3519,7 +3518,7 @@ int get_parameters_from_files_MM(char directory[], int *S, int *D, int *L, doubl
 	}
 	// opens file to read zc_covs -------------------------------------------------------
 	memset(fullname, 0, FNBUFFER);
-	sprintf(fullname,"/home/pi/EMG_MICO/Training/%s/zc_covs.txt", directory);
+	sprintf(fullname,"/home/pi/EMG_MICO/Training/%s/Param/zc_covs.txt", directory);
 	fzc_covs = fopen(fullname, "r");
 	if(fzc_covs == 0)
 	{
@@ -3528,7 +3527,7 @@ int get_parameters_from_files_MM(char directory[], int *S, int *D, int *L, doubl
 	}
 	// opens file to read gr_aves -------------------------------------------------------
 	memset(fullname, 0, FNBUFFER);
-	sprintf(fullname,"/home/pi/EMG_MICO/Training/%s/gr_aves.txt", directory);
+	sprintf(fullname,"/home/pi/EMG_MICO/Training/%s/Param/gr_aves.txt", directory);
 	fgr_aves = fopen(fullname, "r");
 	if(fgr_aves == 0)
 	{
@@ -3537,7 +3536,7 @@ int get_parameters_from_files_MM(char directory[], int *S, int *D, int *L, doubl
 	}
 	// opens file to read gr_covs -------------------------------------------------------
 	memset(fullname, 0, FNBUFFER);
-	sprintf(fullname,"/home/pi/EMG_MICO/Training/%s/gr_covs.txt", directory);
+	sprintf(fullname,"/home/pi/EMG_MICO/Training/%s/Param/gr_covs.txt", directory);
 	fgr_covs = fopen(fullname, "r");
 	if(fgr_covs == 0)
 	{
@@ -3546,7 +3545,7 @@ int get_parameters_from_files_MM(char directory[], int *S, int *D, int *L, doubl
 	}
 	// opens file to read feat_weights --------------------------------------------------
 	memset(fullname, 0, FNBUFFER);
-	sprintf(fullname,"/home/pi/EMG_MICO/Training/%s/feat_weights.txt", directory);
+	sprintf(fullname,"/home/pi/EMG_MICO/Training/%s/Param/feat_weights.txt", directory);
 	ffeat_wgts = fopen(fullname, "r");
 	if(ffeat_wgts == 0)
 	{
