@@ -57,7 +57,7 @@
 #define NOISE_WIN					150				// Set to have approx.  ~ 150 ms  // when sampling
 #define THR_WIN						2000			// For the threshold window. Set to ~ 2 sec.
 #define SIG_FIRST_PART	 			100				// Go back from the flagindex, count as signal pts.
-#define HIGH_THR_FACTOR				1.8				// Moving average window threshold
+#define HIGH_THR_FACTOR				1.4				// Moving average window threshold
 #define LOW_THR_FACTOR				1.05
 //#define LOW_THR_FACTOR				1.5
 
@@ -65,7 +65,7 @@
 #define NUMBER_CHANNELS				1				// the number of channels being used
 #define MAX_SIG						5				// maximum possible number of signatures
 #define NRS 		    			1				// default number of signatures, previously it was 4
-#define TRAIN_SAMPLES				20				// suggested training sample is 20 per gesture
+#define TRAIN_SAMPLES				5				// suggested training sample is 20 per gesture
 #define MAX_NR_TR		   			20				// maximum number of training signals allowed
 #define SIG_DURATION	            500				// default signal length, in mili-seconds
 #define BUFFER_SIZE					3750			// Circular Buffer size
@@ -138,6 +138,7 @@ int main(int argc, char **argv)
 	int     sig_duration = SIG_DURATION;								// default value, may change if input by user	
 	int     thr_win = round_i(THR_WIN*SAMPLING_FACTOR);					// threshold window, 2 seconds worth of data
 	float 	average_signal;												// average signal to center the samples for the gesture 
+    int     dummy;
 	
     char *gesture_names[5] = {(char*)"Gesture1", (char*)"Gesture2", (char*)"Gesture3",(char*)"Gesture4", (char*)"Gesture5"};
 
@@ -164,7 +165,7 @@ int main(int argc, char **argv)
 	char mode = 'e';							// default mode (exit)
 
 	FILE *fdata_all = NULL;
-    char fullname[100];
+    char fullname[300];
 
 // ---------------- Allocating Memories for the gesture variables ----------------
 
@@ -358,6 +359,9 @@ int main(int argc, char **argv)
 
 				k = 0;		// reset counter for the gestures
 
+            	sprintf(fullname, "mkdir -m o-w /home/pi/EMG_MICO/Training/%s\n", directory);
+	            dummy = system(fullname);	// creates directory if it does not exist
+
 				// ----- Main training loop (gets all training signals for the current gesture -----
 				while(k < N)
 				{
@@ -475,10 +479,24 @@ int main(int argc, char **argv)
 
 					data_all[g].set_row(k,emg_signal.get_row(0));
 
+    		        sprintf(fullname, "/home/pi/EMG_MICO/Training/%s/%s_%03d.txt", directory, gesture_names[g], k+1);
+                    fdata_all = fopen(fullname, "w");
+                    
+                    for(i = 0; i < L; i++)	// samples' loop
+                    {
+                        fprintf(fdata_all, "%+1.7e\n", data_all[g](k,i));
+                    }
+                    fclose(fdata_all);
+ 
 #if PRINTF > 0
 					printf("The training signal was accepted.\n");
 					fflush(stdout);
 #endif
+                    //Plot the data
+                    sprintf(fullname, "gnuplot -e \"plot '/home/pi/EMG_MICO/Training/%s/%s_%03d.txt' with lines; pause 1; exit\"", directory, gesture_names[g], k+1);
+                    system(fullname);                  
+
+
 					k++;
 
 					// Message to hold still, to prevent users from doing the gesture too soon...
@@ -488,22 +506,24 @@ int main(int argc, char **argv)
 				} //end of main training loop
     
                 // Save the current training files                
-            	sprintf(fullname, "mkdir -m o-w /home/pi/EMG_MICO/Training/%s\n", directory);
-	            k = system(fullname);	// creates directory if it does not exist
-
-                for(i = 0; i < N; i++)
-                {
-                    sprintf(fullname, "/home/pi/EMG_MICO/Training/%s/%s_%03d.txt", directory, gesture_names[g], i+1);
-                
-                    fdata_all = fopen(fullname, "w");
-                    
-                    for(k = 0; k < L; k++)	// samples' loop
-                    {
-                        fprintf(fdata_all, "%+1.7e\n", data_all[g](i,k));
-                    }
-                    fclose(fdata_all);
-        
-                }
+//            	sprintf(fullname, "mkdir -m o-w /home/pi/EMG_MICO/Training/%s\n", directory);
+//	            k = system(fullname);	// creates directory if it does not exist
+//
+//		        sprintf(fullname, "/home/pi/EMG_MICO/Training/%s/%s_%03d.txt", directory, gesture_names[g], i+1);
+//
+//                for(i = 0; i < N; i++)
+//                {
+//                    sprintf(fullname, "/home/pi/EMG_MICO/Training/%s/%s_%03d.txt", directory, gesture_names[g], i+1);
+//                
+//                    fdata_all = fopen(fullname, "w");
+//                    
+//                    for(k = 0; k < L; k++)	// samples' loop
+//                    {
+//                        fprintf(fdata_all, "%+1.7e\n", data_all[g](i,k));
+//                    }
+//                    fclose(fdata_all);
+//        
+//                }
 
 //			} //end of gesture loop
 			
@@ -621,7 +641,7 @@ int main(int argc, char **argv)
 				int ges_num;
 				int err_num[4] = {0};
 				
-				int tot_ges_num = NRS;
+				int tot_ges_num = 4;
 				int tot_rep_num = 5;
 				
 				for(ges_num = 0; ges_num < tot_ges_num; ges_num++)

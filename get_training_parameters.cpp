@@ -36,7 +36,7 @@ int main(int argc, char **argv)
 	mat 	data_all[MAX_SIG];
 	
 	// ----- Training Parameters -----
-    int N = 10;
+    int N;
     int L = 1875;    
     ivec 	segD;
 	int 	S = NRS;							// default number of signatures considered (3 or 4)
@@ -73,6 +73,9 @@ int main(int argc, char **argv)
 
 	}
     
+    printf("The number of training data for each gesture:");
+    scanf("%d", &N);
+
     for(int g = 0; g < 4; g++)
     {
         // Initialize the data variable 
@@ -86,7 +89,7 @@ int main(int argc, char **argv)
 				
             for(int k = 0; k < L; k++)	// samples' loop
 			{
-				fprintf(fdata_all, "%f", &temp);
+				fscanf(fdata_all, "%f", &temp);
                 data_all[g](i,k) = temp;
 			}
 			fclose(fdata_all);

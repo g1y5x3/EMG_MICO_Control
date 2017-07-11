@@ -739,7 +739,7 @@ int main(int argc, char **argv)
 						if(movement != (ges_num+1))
 							err_num[ges_num]++;
 
-                        sleep(0.5);
+                        sleep(1);
 													
 					}
 					

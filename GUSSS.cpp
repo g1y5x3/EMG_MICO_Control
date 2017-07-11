@@ -3750,7 +3750,7 @@ float readADS1256()
 	float data;
 	uint8_t 	buffer[3];
 	uint32_t 	read = 0;
-	uint8_t 	del = 8;	
+	uint8_t 	del = 10;	
 	
 	waitDRDY();
 	buffer[0] = recieve8bit();
@@ -3766,14 +3766,12 @@ float readADS1256()
 	}
 
 	data = (float)read/1670000;
-	//currentTime[i] = clock() - startTime;
-	//printf("%f %i\n", (float)read/1670000, clock() - startTime); // TESTING
 	delayus(del);
 	
 	if( data <= 5 )     // When an error occurs (not very frequent) the ADC would return
 		return data;    // a value greater than 5, in that case, we simple throw away that 
 	else                // value and send a 5 (maximum number) as a indicator. 
-		return 5;
+		return 0;
 }
 
 
