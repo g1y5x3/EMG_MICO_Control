@@ -57,14 +57,14 @@
 #define NOISE_WIN					200				// Set to have approx.  ~ 150 ms  // when sampling
 #define THR_WIN						2000			// For the threshold window. Set to ~ 2 sec.
 #define SIG_FIRST_PART	 			100				// Go back from the flagindex, count as signal pts.
-#define HIGH_THR_FACTOR				1.0				// Moving average window threshold
+#define HIGH_THR_FACTOR				1.5				// Moving average window threshold
 #define LOW_THR_FACTOR				1.0
 
 //---------- Training and testing configuration ----------
 #define NUMBER_CHANNELS				1				// the number of channels being used
 #define MAX_SIG						5				// maximum possible number of signatures
 #define NRS 		    			1				// default number of signatures, previously it was 4
-#define TRAIN_SAMPLES				10				// suggested training sample is 20 per gesture
+#define TRAIN_SAMPLES				20				// suggested training sample is 20 per gesture
 #define MAX_NR_TR		   			50				// maximum number of training signals allowed
 #define SIG_DURATION	            500				// default signal length, in mili-seconds
 #define BUFFER_SIZE					3750			// Circular Buffer size
@@ -95,7 +95,6 @@ int main(int argc, char **argv)
 	int     count = 0;							// represent different states while collecting gestures
 	int     i = 1, j = 0;						// general loop variable
 	int 	N = TRAIN_SAMPLES;					// default number of training/testing signals
-//	double 	low_thr_fac = LOW_THR_FACTOR;
 	int 	L;									// for the number of samples per signal
 	int 	g;									// g - gesture, loop variable
 	int 	k = 0;
@@ -241,10 +240,10 @@ int main(int argc, char **argv)
 // ---------------- Configure the ADC ----------------
 
 #if PRINTF > 0
-	printf("\nResetting the ADC.\n");
+	printf("\nConfiguring ADC...\n");
 	fflush(stdout);
 #endif
-	
+
 	// Initialization and AD configuration
 	if (!initializeSPI()) return 1;
 	setBuffer(1);
@@ -260,10 +259,10 @@ int main(int argc, char **argv)
 	CS_0();
 	waitDRDY();
 	send8bit(CMD_RDATAC);
-	delayus(20); 	// min delay: t6 = 50 * 1/7.68 MHz = 6.5 microseconds
+	delayus(8); 	// min delay: t6 = 50 * 1/7.68 MHz = 6.5 microseconds
 
 #if PRINTF > 0
-	printf("Getting the Threshold.\n");
+	printf("Pleasing Stay Rest......\n");
 	fflush(stdout);
 #endif
 
@@ -284,11 +283,27 @@ int main(int argc, char **argv)
 
 			noiseV[0] += readADS1256()/thr_win;      // ADC value from AVR
 		}
+        
 		thresholdV[0] = noiseV[0] + gaV; 
 	}
 
+    // Fill the entire noise buffer 
+    average_noise = 0;
+    for(i= 0; i< buffer_size; i++)
+    {
+        buffer_noise_cont[0][i] = readADS1256();
+        average_noise += buffer_noise_cont[0][i];
+    }
+    average_noise = average_noise / buffer_size;			
+
+	// Stop continuous mode for ADC
+	waitDRDY();
+	send8bit(CMD_SDATAC); // Stop read data continuous.
+	CS_1();	
+	
 #if PRINTF > 0
 	printf("Noise Average = %.3f\nThreshold = %.3f\n", noiseV[0], thresholdV[0]);
+    printf("Noise Buffer Filled!\n");
 	fflush(stdout);
 #endif
 	
@@ -318,30 +333,13 @@ int main(int argc, char **argv)
 			
 			detected_resting = false;
 			buffer_index = 0;
-			
+           
 #if PRINTF > 0
-				printf("Pleasing Stay Rest......\n");
-				fflush(stdout);
+            fflush(stdout);
 #endif
-				// Fill the entire noise buffer 
-				average_noise = 0;
-				for(i= 0; i< buffer_size; i++)
-				{
-					buffer_noise_cont[0][i] = readADS1256();
-
-					average_noise += buffer_noise_cont[0][i];
-				}
-								
-				// Calculate the average noise to center the signal
-				average_noise = average_noise / buffer_size;			
-				
-#if PRINTF > 0
-				printf("Noise Buffer Filled! Now Training the Gesture...\n");
-				fflush(stdout);
-#endif
-            
+        
 			// -------------------- Gestures' Loop --------------------
-            printf("Which gesture to be trained?\n");
+            printf("Which gesture to be trained? ");
             scanf("%d",&g);
             g--;
 
@@ -360,11 +358,9 @@ int main(int argc, char **argv)
 			// ----- Main training loop (gets all training signals for the current gesture -----
 			while(k < N)
 			{
-				average_signal = 0.0;			
-                mov_ave[0] = 0;
-
 				if (detected_resting == false) 
 				{
+                    mov_ave[0] = 0;
 					count = -noise_win;
 					dc_offset[0] = 0.0;
 				}
@@ -373,7 +369,12 @@ int main(int argc, char **argv)
 #if PRINTF > 0
 				std::cout << "Number of training signals left: " << (N-k) << endl;
 #endif
-				
+                // Set continuous mode.
+                CS_0();
+                waitDRDY();
+                send8bit(CMD_RDATAC);
+                delayus(8); 	// min delay: t6 = 50 * 1/7.68 MHz = 6.5 microseconds
+		
 				// circular buffer to get the samples
 				while(1)
 				{
@@ -391,17 +392,20 @@ int main(int argc, char **argv)
 					// Should only be entered once as well
 					else if(count == -1)
 					{
-                        cout << dc_offset[0] << endl;
-//						mov_ave[0] = dc_offset[0];
-						mov_ave[0] = 0;
-//						for(int j = 0; j < noise_win; j++)
-//						{
-//							// Read the value which was collected for calculating the average DC offset 
-//							// to be the first value of moving average window
-//							mov_ave[0] += abs(buffer[0][buffer_index - (noise_win - j - 1)] - dc_offset[0]);
-//						}
-//						mov_ave[0] = mov_ave[0]/noise_win;
-						count++;
+    					// Read the value which was collected for calculating the average DC offset 
+				    	// to be the initial moving average value
+	                    if( j < noise_win)
+						{
+						    mov_ave[0] += abs(buffer[0][buffer_index] - dc_offset[0]);
+                            j++;
+						}
+                        else
+                        {
+						    mov_ave[0] = mov_ave[0]/noise_win;
+                            cout << "DC offset: " << dc_offset[0] << endl;
+                            cout << "Moving average: " << mov_ave[0] << endl;
+						    count++;
+                        }
 					}
 					// State: 3 Search for EMG activity
 					// We now have the moving average, and we need to update it and see if that updated
@@ -415,9 +419,10 @@ int main(int argc, char **argv)
 						{
 							// Once the moving average exceeds the threshold, mark the current buffer index
 							flagindex = buffer_index;
+                            cout << "Buffer Index: " << buffer_index << endl;
+                            cout << "Moving average: " << mov_ave[0] << endl;
 							// Get the total value to center the signal later
 							count++;
-                            cout << "state 3" << endl;
 						}
 					}
 					// State: 4 Search for EMG resting while collecting gestures
@@ -426,7 +431,7 @@ int main(int argc, char **argv)
 					else if((count > 0) && (count <= L - sig_first_part))   
 					{
 						mov_ave[0] += (abs(buffer[0][buffer_index] - dc_offset[0]) - abs(buffer[0][(buffer_index - noise_win + buffer_size) % buffer_size] - dc_offset[0])) / noise_win;
-//						average_signal += buffer[0][buffer_index];
+
 						if (mov_ave[0] < LOW_THR_FACTOR * (thresholdV[0] - dc_offset[0])) 
 						{
                             cout << "state 4" << endl;
@@ -440,6 +445,7 @@ int main(int argc, char **argv)
 					else
 					{
 						mov_ave[0] += (abs(buffer[0][buffer_index] - dc_offset[0]) - abs(buffer[0][(buffer_index - noise_win+buffer_size) % buffer_size] - dc_offset[0])) / noise_win;
+
 						if (mov_ave[0] < LOW_THR_FACTOR * (thresholdV[0] - dc_offset[0]))
 						{
                             cout << "state 5" << endl;
@@ -452,34 +458,24 @@ int main(int argc, char **argv)
 
 					buffer_index = (buffer_index+1) % buffer_size;
 				}	// end of circular buffer to get the samples	
-
+	
 				// ----- prepare the signal -----
-				
+                // Stop continuous mode for ADC
+                waitDRDY();
+                send8bit(CMD_SDATAC); // Stop read data continuous.
+                CS_1();	
+                        
 #if PRINTF > 1
 				printf("prepare signal vector......\n");
 				fflush(stdout);
 #endif
-
-//				// Get the final total value of the gesture after adding the first 65ms of signals
-//				for(i = 0; i < sig_first_part; i++)
-//					average_signal += (buffer[0][(flagindex - sig_first_part + i + buffer_size) % buffer_size]);
-//
-//			    average_signal = average_signal / L;
-//
-//				// Calculate the average value based on the acutal length of the signal	
-//				if((count + sig_first_part) > L)
-//					average_signal = average_signal / L;
-//				else
-//					average_signal = average_signal / (count + sig_first_part);
 					
-
 				for(i = 0; i < L; i++)
 				{
 					if (i < (count+sig_first_part))
 						emg_signal(0,i) = (buffer[0][(flagindex-sig_first_part+i+buffer_size) % buffer_size]) - 1.65;	
 					else
 						emg_signal(0,i) = (buffer_noise_cont[0][(flagindex-sig_first_part+i+buffer_size) % buffer_size]) - 1.65;
-//						emg_signal(0,i) = (buffer_noise_cont[0][(flagindex-sig_first_part+i+buffer_size) % buffer_size]) - average_noise;
 				}
 
 				data_all[g].set_row(k,emg_signal.get_row(0));
@@ -589,18 +585,17 @@ int main(int argc, char **argv)
 			{
 #if PRINTF > 0
 				printf("\nRecognition mode!(Accuracy Test)\n");
-				printf("Pleasing Stay Rest......\n");
 				fflush(stdout);
 #endif
-				// Fill the entire noise buffer 
-				average_noise = 0;
-				for(i= 0; i< buffer_size; i++)
-				{
-					buffer_noise_cont[0][i] = readADS1256();
-					average_noise += buffer_noise_cont[0][i];
-				}
-				// Calculate the average noise to center the signal
-				average_noise = average_noise / buffer_size;	
+//				// Fill the entire noise buffer 
+//				average_noise = 0;
+//				for(i= 0; i< buffer_size; i++)
+//				{
+//					buffer_noise_cont[0][i] = readADS1256();
+//					average_noise += buffer_noise_cont[0][i];
+//				}
+//				// Calculate the average noise to center the signal
+//				average_noise = average_noise / buffer_size;	
 							
 				int movement = 0;
 				
@@ -618,7 +613,6 @@ int main(int argc, char **argv)
 				fflush(stdout);
 #endif
 
-
 				int ges_num;
 				int err_num[4] = {0};
 
@@ -635,7 +629,6 @@ int main(int argc, char **argv)
 
 
                 int temp;
-//				int tot_ges_num = 4;
 				int tot_rep_num = 5;
 				
                 printf("Which LABEL to test? ");
@@ -668,95 +661,110 @@ int main(int argc, char **argv)
 						fflush(stdout);
 #endif
 
-						average_signal = 0.0;				
-
-						if (detected_resting == false) 
-						{
-							count = -noise_win;
-							dc_offset[0] = 0.0;
-						}
-						else count = 0;
-
-						// circular buffer to get the samples
-                        while(1)
+                        if (detected_resting == false) 
                         {
-                            // read ADC value from AVR
-                            buffer[0][buffer_index] = readADS1256();
-                            
-                            // State:1 Get the current average DC offset
-                            // Should only be enetered once if signal rest has always been detected
-                            if(count < -1)
-                            {
-                                dc_offset[0] += buffer[0][buffer_index] / noise_win;
-                                count++;
-                            }
-                            // State:2 Calculate the beginning value of moving average
-                            // Should only be entered once as well
-                            else if(count == -1)
-                            {
-                                cout << dc_offset[0] << endl;
-        //						mov_ave[0] = dc_offset[0];
-                                mov_ave[0] = 0;
-        //						for(int j = 0; j < noise_win; j++)
-        //						{
-        //							// Read the value which was collected for calculating the average DC offset 
-        //							// to be the first value of moving average window
-        //							mov_ave[0] += abs(buffer[0][buffer_index - (noise_win - j - 1)] - dc_offset[0]);
-        //						}
-        //						mov_ave[0] = mov_ave[0]/noise_win;
-                                count++;
-                            }
-                            // State: 3 Search for EMG activity
-                            // We now have the moving average, and we need to update it and see if that updated
-                            // value exceeds the threshold. If so, we start collecting the actual EMG signal
-                            else if(count == 0)  
-                            {
-                                // Continue to calculate the moving average while reading from the ADC
-                                mov_ave[0] += (abs(buffer[0][buffer_index] - dc_offset[0]) - abs(buffer[0][(buffer_index - noise_win + buffer_size) % buffer_size] - dc_offset[0])) / noise_win;
+                            mov_ave[0] = 0;
+                            count = -noise_win;
+                            dc_offset[0] = 0.0;
+                        }
+                        else count = 0;
 
-                                if ((mov_ave[0] > HIGH_THR_FACTOR * (thresholdV[0] - dc_offset[0])))
-                                {
-                                    // Once the moving average exceeds the threshold, mark the current buffer index
-                                    flagindex = buffer_index;
-                                    // Get the total value to center the signal later
-                                    count++;
-                                    cout << "state 3" << endl;
-                                }
-                            }
-                            // State: 4 Search for EMG resting while collecting gestures
-                            // Once start to collect the signal, the break condition will be either detecting the signal rest
-                            // or done collecting the entire length of 2000 samples
-                            else if((count > 0) && (count <= L - sig_first_part))   
-                            {
-                                mov_ave[0] += (abs(buffer[0][buffer_index] - dc_offset[0]) - abs(buffer[0][(buffer_index - noise_win + buffer_size) % buffer_size] - dc_offset[0])) / noise_win;
-        //						average_signal += buffer[0][buffer_index];
-                                if (mov_ave[0] < LOW_THR_FACTOR * (thresholdV[0] - dc_offset[0])) 
-                                {
-                                    cout << "state 4" << endl;
-                                    detected_resting = true;
-                                    break;
-                                }
-                                count++;
-                            }
-                            // State 5: Search for EMG resting after gesture has been collected
-                            // If the gesture takes longer than 500ms, wait till the signal start to rest to avoid misreading the next time.
-                            else
-                            {
-                                mov_ave[0] += (abs(buffer[0][buffer_index] - dc_offset[0]) - abs(buffer[0][(buffer_index - noise_win+buffer_size) % buffer_size] - dc_offset[0])) / noise_win;
-                                if (mov_ave[0] < LOW_THR_FACTOR * (thresholdV[0] - dc_offset[0]))
-                                {
-                                    cout << "state 5" << endl;
-                                    detected_resting = false;
-                                    break;
-                                }
+                // Set continuous mode.
+                CS_0();
+                waitDRDY();
+                send8bit(CMD_RDATAC);
+                delayus(8); 	// min delay: t6 = 50 * 1/7.68 MHz = 6.5 microseconds
+		
+				// circular buffer to get the samples
+				while(1)
+				{
+					// read ADC value from AVR
+					buffer[0][buffer_index] = readADS1256();
+					
+					// State:1 Get the current average DC offset
+					// Should only be enetered once if signal rest has always been detected
+					if(count < -1)
+					{
+						dc_offset[0] += buffer[0][buffer_index] / noise_win;
+						count++;
+					}
+					// State:2 Calculate the beginning value of moving average
+					// Should only be entered once as well
+					else if(count == -1)
+					{
+    					// Read the value which was collected for calculating the average DC offset 
+				    	// to be the initial moving average value
+	                    if( j < noise_win)
+						{
+						    mov_ave[0] += abs(buffer[0][buffer_index] - dc_offset[0]);
+                            j++;
+						}
+                        else
+                        {
+						    mov_ave[0] = mov_ave[0]/noise_win;
+                            cout << "DC offset: " << dc_offset[0] << endl;
+                            cout << "Moving average: " << mov_ave[0] << endl;
+						    count++;
+                        }
+					}
+					// State: 3 Search for EMG activity
+					// We now have the moving average, and we need to update it and see if that updated
+					// value exceeds the threshold. If so, we start collecting the actual EMG signal
+					else if(count == 0)  
+					{
+						// Continue to calculate the moving average while reading from the ADC
+						mov_ave[0] += (abs(buffer[0][buffer_index] - dc_offset[0]) - abs(buffer[0][(buffer_index - noise_win + buffer_size) % buffer_size] - dc_offset[0])) / noise_win;
 
-                                count++;
-                            }
+						if ((mov_ave[0] > HIGH_THR_FACTOR * (thresholdV[0] - dc_offset[0])))
+						{
+							// Once the moving average exceeds the threshold, mark the current buffer index
+							flagindex = buffer_index;
+                            cout << "Buffer Index: " << buffer_index << endl;
+                            cout << "Moving average: " << mov_ave[0] << endl;
+							// Get the total value to center the signal later
+							count++;
+						}
+					}
+					// State: 4 Search for EMG resting while collecting gestures
+					// Once start to collect the signal, the break condition will be either detecting the signal rest
+					// or done collecting the entire length of 2000 samples
+					else if((count > 0) && (count <= L - sig_first_part))   
+					{
+						mov_ave[0] += (abs(buffer[0][buffer_index] - dc_offset[0]) - abs(buffer[0][(buffer_index - noise_win + buffer_size) % buffer_size] - dc_offset[0])) / noise_win;
 
-                            buffer_index = (buffer_index+1) % buffer_size;
-                        }	// end of circular buffer to get the samples	
+						if (mov_ave[0] < LOW_THR_FACTOR * (thresholdV[0] - dc_offset[0])) 
+						{
+                            cout << "state 4" << endl;
+							detected_resting = true;
+							break;
+						}
+						count++;
+					}
+					// State 5: Search for EMG resting after gesture has been collected
+					// If the gesture takes longer than 500ms, wait till the signal start to rest to avoid misreading the next time.
+					else
+					{
+						mov_ave[0] += (abs(buffer[0][buffer_index] - dc_offset[0]) - abs(buffer[0][(buffer_index - noise_win+buffer_size) % buffer_size] - dc_offset[0])) / noise_win;
 
-#if PRINTF > 1
+						if (mov_ave[0] < LOW_THR_FACTOR * (thresholdV[0] - dc_offset[0]))
+						{
+                            cout << "state 5" << endl;
+							detected_resting = false;
+							break;
+						}
+
+						count++;
+					}
+
+					buffer_index = (buffer_index+1) % buffer_size;
+				}	// end of circular buffer to get the samples	
+	
+				// ----- prepare the signal -----
+                // Stop continuous mode for ADC
+                waitDRDY();
+                send8bit(CMD_SDATAC); // Stop read data continuous.
+                CS_1();	
+ #if PRINTF > 1
 						printf("Signal detected (recognition mode)\n");
 						fflush(stdout);
 #endif
@@ -834,11 +842,8 @@ int main(int argc, char **argv)
 	}  //end of main client loop
 	free(buffer[0]);
 	
-	// Stop continuous mode for ADC
-	waitDRDY();
-	send8bit(CMD_SDATAC); // Stop read data continuous.
-	CS_1();	
-	
+
+    endSPI();
 	return 0;
 
 }	// end of main function

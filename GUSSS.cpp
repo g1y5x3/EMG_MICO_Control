@@ -3749,7 +3749,7 @@ float readADS1256()
 	float data;
 	uint8_t 	buffer[3];
 	uint32_t 	read = 0;
-	uint8_t 	del = 50;	
+	uint8_t 	del = 8;	
 	
 	waitDRDY();
 	buffer[0] = recieve8bit();
@@ -3760,6 +3760,7 @@ float readADS1256()
 	read  = ((uint32_t)buffer[0] << 16) & 0x00FF0000;
 	read |= ((uint32_t)buffer[1] << 8);
 	read |= buffer[2];
+
 	if (read & 0x800000){
 		read |= 0xFF000000;
 	}
@@ -3770,7 +3771,7 @@ float readADS1256()
 	if( data <= 5 )     // When an error occurs (not very frequent) the ADC would return
 		return data;    // a value greater than 5, in that case, we simple throw away that 
 	else                // value and send a 5 (maximum number) as a indicator. 
-		return 1.65;
+		return 5;
 }
 
 
