@@ -506,40 +506,6 @@ int main(int argc, char **argv)
 
 			} //end of main training loop
 			
-//			// ----- Calculate Signatures and other training parameters -----
-//			
-//#if PRINTF > 0
-//			printf("\nCalculating the Parameters for the Signatures.\n");
-//			fflush(stdout);
-//#endif
-//			// get the index vector for the segments.
-//			segD = zeros_i(D+1);
-//			for(i = 0; i <= D; i++)
-//				segD(i) = round_i(1.0 * i * L / D);
-//
-//			// the following calculates all training parameters and saves everything into
-//			// files. The parameters will be available in all those matrices, so there is no
-//			// need to exit the program. I just need to go to either the use, the smooth or
-//			// the classification mode.
-//			i = get_training_parameters_MM(data_all,&segD, &Sigs,S,mav_aves,mav_covs,zc_aves,
-//					zc_covs, gr_aves, gr_covs, &zc_thr, &feat_wgts, weightOpt, directory);
-//					
-//			if(i < 0)
-//			{
-//				perror("Calculation of signatures and training parameters failed\n");
-//				exit(-1);
-//			}
-//			if(i > 0)
-//			{
-//				printf("There was a problem with the covariances: %d\n", i);
-//				exit(-1);
-//			}
-//
-//#if PRINTF > 0
-//			printf("Finished Getting the Signatures.\n");
-//			fflush(stdout);
-//#endif
-
 			// Free the matrices containing all the training signals. Not needed anymore
 			for(g = 0; g < S; g++)		// 3, 4 or 5
 				data_all[g].~Mat();
@@ -587,16 +553,7 @@ int main(int argc, char **argv)
 				printf("\nRecognition mode!(Accuracy Test)\n");
 				fflush(stdout);
 #endif
-//				// Fill the entire noise buffer 
-//				average_noise = 0;
-//				for(i= 0; i< buffer_size; i++)
-//				{
-//					buffer_noise_cont[0][i] = readADS1256();
-//					average_noise += buffer_noise_cont[0][i];
-//				}
-//				// Calculate the average noise to center the signal
-//				average_noise = average_noise / buffer_size;	
-							
+
 				int movement = 0;
 				
 				emg_signal = zeros(1,L); 					// need to be changed from vector to matrix
@@ -768,11 +725,6 @@ int main(int argc, char **argv)
 						printf("Signal detected (recognition mode)\n");
 						fflush(stdout);
 #endif
-//        				// Get the final total value of the gesture after adding the first 65ms of signals
-//	        			for(i = 0; i < sig_first_part; i++)
-//		        			average_signal += (buffer[0][(flagindex - sig_first_part + i + buffer_size) % buffer_size]);
-//
-//			             average_signal = average_signal / L;
 
 				        for(i = 0; i < L; i++)
 				        {
@@ -824,12 +776,8 @@ int main(int argc, char **argv)
 //				} // end of while(1)
 				
 				std::cout << "Test Result:" << endl;				
-				
-//				for(ges_num = 0; ges_num < tot_ges_num; ges_num++)
-//				{
-						std::cout << "Gesture " << ges_num+1<< " has " << err_num[ges_num] << " error!";
-						std::cout << " Accuracy is:" << (double)(tot_rep_num - err_num[ges_num]) / tot_rep_num * 100 << "%" << endl;
-//				}
+				std::cout << "Gesture " << ges_num+1<< " has " << err_num[ges_num] << " error!";
+				std::cout << " Accuracy is:" << (double)(tot_rep_num - err_num[ges_num]) / tot_rep_num * 100 << "%" << endl;
 				
 				mode = 'e';		// exit the program		
 				
