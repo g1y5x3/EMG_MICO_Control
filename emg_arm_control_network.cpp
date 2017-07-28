@@ -58,11 +58,11 @@
 
 
 //---------- Moving average window ----------
-#define NOISE_WIN					150				// Set to have approx.  ~ 150 ms  // when sampling
+#define NOISE_WIN					200				// Set to have approx.  ~ 150 ms  // when sampling
 #define THR_WIN						2000			// For the threshold window. Set to ~ 2 sec.
-#define SIG_FIRST_PART	 			90				// Go back from the flagindex, count as signal pts.
-#define HIGH_THR_FACTOR				1.8				// Moving average window threshold
-#define LOW_THR_FACTOR				1.2
+#define SIG_FIRST_PART	 			100				// Go back from the flagindex, count as signal pts.
+#define HIGH_THR_FACTOR				1.5				// Moving average window threshold
+#define LOW_THR_FACTOR				1.0
 
 //---------- Training and testing configuration ----------
 #define NUMBER_CHANNELS				1				// the number of channels being used
@@ -590,7 +590,7 @@ int main(int argc, char **argv)
 				error("ERROR opening socket");
     
 				// The variable argv[1] contains the name of a host on the internet
-				server = gethostbyname("10.14.1.235");
+				server = gethostbyname("10.14.1.226");
 				if (server == NULL) 
 				{
 					fprintf(stderr,"ERROR, no such host\n");

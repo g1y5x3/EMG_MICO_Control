@@ -3771,7 +3771,7 @@ float readADS1256()
 	if( data <= 5 )     // When an error occurs (not very frequent) the ADC would return
 		return data;    // a value greater than 5, in that case, we simple throw away that 
 	else                // value and send a 5 (maximum number) as a indicator. 
-		return 5;
+		return 1.65;
 }
 
 

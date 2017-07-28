@@ -296,10 +296,10 @@ int main(int argc, char **argv)
     }
     average_noise = average_noise / buffer_size;			
 
-	//// Stop continuous mode for ADC
-	//waitDRDY();
-	//send8bit(CMD_SDATAC); // Stop read data continuous.
-	//CS_1();	
+	// Stop continuous mode for ADC
+	waitDRDY();
+	send8bit(CMD_SDATAC); // Stop read data continuous.
+	CS_1();	
 	
 #if PRINTF > 0
 	printf("Noise Average = %.3f\nThreshold = %.3f\n", noiseV[0], thresholdV[0]);
@@ -369,11 +369,11 @@ int main(int argc, char **argv)
 #if PRINTF > 0
 				std::cout << "Number of training signals left: " << (N-k) << endl;
 #endif
-                //// Set continuous mode.
-                //CS_0();
-                //waitDRDY();
-                //send8bit(CMD_RDATAC);
-                //delayus(8); 	// min delay: t6 = 50 * 1/7.68 MHz = 6.5 microseconds
+                // Set continuous mode.
+                CS_0();
+                waitDRDY();
+                send8bit(CMD_RDATAC);
+                delayus(8); 	// min delay: t6 = 50 * 1/7.68 MHz = 6.5 microseconds
 		
 				// circular buffer to get the samples
 				while(1)
@@ -460,10 +460,10 @@ int main(int argc, char **argv)
 				}	// end of circular buffer to get the samples	
 	
 				// ----- prepare the signal -----
-                //// Stop continuous mode for ADC
-                //waitDRDY();
-                //send8bit(CMD_SDATAC); // Stop read data continuous.
-                //CS_1();	
+                // Stop continuous mode for ADC
+                waitDRDY();
+                send8bit(CMD_SDATAC); // Stop read data continuous.
+                CS_1();	
                         
 #if PRINTF > 1
 				printf("prepare signal vector......\n");
@@ -553,7 +553,45 @@ int main(int argc, char **argv)
 				printf("\nRecognition mode!(Accuracy Test)\n");
 				fflush(stdout);
 #endif
+                
+				// ----- Configure the Socket -----
 
+				int sockfd, portno;			
+				struct sockaddr_in serv_addr;		// stores the address for the server
+				struct hostent *server;				
+				char buffer_socket[10];
+    
+				// Convert the argument into integers
+				portno = atoi("51900");
+    
+				// Create a new socket, using internet domain, stream socket, and TCP protocal
+				sockfd = socket(AF_INET, SOCK_STREAM, 0);
+				if (sockfd < 0) 
+				error("ERROR opening socket");
+    
+				// The variable argv[1] contains the name of a host on the internet
+				server = gethostbyname("10.14.1.226");
+				if (server == NULL) 
+				{
+					fprintf(stderr,"ERROR, no such host\n");
+					exit(0);
+				}
+    
+				bzero((char *)&serv_addr, sizeof(serv_addr));		// initializes serv_addr to zeros
+				serv_addr.sin_family = AF_INET;						// sets the address family
+				// Copy the settings from the server
+				bcopy((char *)server->h_addr, (char *)&serv_addr.sin_addr.s_addr, server->h_length);	
+				serv_addr.sin_port = htons(portno);					// sets the port number
+    
+				// Establish a connection to the server
+				if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) 
+					error("ERROR connecting");
+
+#if PRINTF > 0
+				printf("Network Configuration Complete!\n\n");
+				fflush(stdout);
+#endif    
+	
 				int movement = 0;
 				
 				emg_signal = zeros(1,L); 					// need to be changed from vector to matrix
@@ -570,48 +608,45 @@ int main(int argc, char **argv)
 				fflush(stdout);
 #endif
 
-				int ges_num;
-				int err_num[4] = {0};
-
-                int labels[5];
-	            FILE *flabel = NULL;
-                // read from the label map            
-                sprintf(fullname, "/home/pi/EMG_MICO/Training/%s/Param/label_map.txt", directory);
+                //int labels[5];
+	            //FILE *flabel = NULL;
+                //// read from the label map            
+                //sprintf(fullname, "/home/pi/EMG_MICO/Training/%s/Param/label_map.txt", directory);
                 
-                flabel = fopen(fullname, "r");
-                for(i = 0; i < S; i++)\
-                    fscanf(flabel, "%d", &labels[i]);
+                //flabel = fopen(fullname, "r");
+                //for(i = 0; i < S; i++)
+                    //fscanf(flabel, "%d", &labels[i]);
 
-                fclose(flabel);
+                //fclose(flabel);
 
 
-                int temp;
-				int tot_rep_num = 5;
+                //int temp;
+				//int tot_rep_num = 5;
 				
-                printf("Which LABEL to test? ");
-                scanf("%d", &temp);
-                for(i = 0; i < S; i++)
-                {
-                    if( labels[i] == temp )
-                        ges_num = i;
-                }
+                //printf("Which LABEL to test? ");
+                //scanf("%d", &temp);
+                //for(i = 0; i < S; i++)
+                //{
+                    //if( labels[i] == temp )
+                        //ges_num = i;
+                //}
 
-//				for(ges_num = 0; ges_num < tot_ges_num; ges_num++)
-//				{
+////				for(ges_num = 0; ges_num < tot_ges_num; ges_num++)
+////				{
 
-					int rep_num;
+					//int rep_num;
 					
-#if PRINTF > 0
-					std::cout << "Testing for Gesture " << ges_num+1  << endl; 
-					fflush(stdout);
-#endif
+//#if PRINTF > 0
+					//std::cout << "Testing for Gesture " << ges_num+1  << endl; 
+					//fflush(stdout);
+//#endif
 						
-			        // create the directory for subject if it does not exist
-			        sprintf(fullname, "mkdir -m o-w /home/pi/EMG_MICO/Testing/%s\n", directory);
-			        dummy = system(fullname);
+			        //// create the directory for subject if it does not exist
+			        //sprintf(fullname, "mkdir -m o-w /home/pi/EMG_MICO/Testing/%s\n", directory);
+			        //dummy = system(fullname);
 
-				for(rep_num = 0; rep_num < tot_rep_num; rep_num++)
-				{
+					while(1)
+					{
 												
 #if PRINTF > 0
 						printf("Waiting for the gesture %d...\n", tot_rep_num - rep_num);
@@ -627,10 +662,10 @@ int main(int argc, char **argv)
                         else count = 0;
 
                 // Set continuous mode.
-                //CS_0();
-                //waitDRDY();
-                //send8bit(CMD_RDATAC);
-                //delayus(8); 	// min delay: t6 = 50 * 1/7.68 MHz = 6.5 microseconds
+                CS_0();
+                waitDRDY();
+                send8bit(CMD_RDATAC);
+                delayus(8); 	// min delay: t6 = 50 * 1/7.68 MHz = 6.5 microseconds
 		
 				// circular buffer to get the samples
 				while(1)
@@ -718,9 +753,9 @@ int main(int argc, char **argv)
 	
 				// ----- prepare the signal -----
                 // Stop continuous mode for ADC
-                //waitDRDY();
-                //send8bit(CMD_SDATAC); // Stop read data continuous.
-                //CS_1();	
+                waitDRDY();
+                send8bit(CMD_SDATAC); // Stop read data continuous.
+                CS_1();	
  #if PRINTF > 1
 						printf("Signal detected (recognition mode)\n");
 						fflush(stdout);
@@ -740,17 +775,17 @@ int main(int argc, char **argv)
 						fflush(stdout);
 #endif
 
-        				sprintf(fullname, "/home/pi/EMG_MICO/Testing/%s/%s_%03d.txt", directory, gesture_names[ges_num], rep_num+1);
-	        			fdata_all = fopen(fullname, "w");
+        				//sprintf(fullname, "/home/pi/EMG_MICO/Testing/%s/%s_%03d.txt", directory, gesture_names[ges_num], rep_num+1);
+	        			//fdata_all = fopen(fullname, "w");
 				
-		        		for(i = 0; i < L; i++)	// samples' loop
-			        		fprintf(fdata_all, "%+1.7e\n", emg_signal(0,i));
+		        		//for(i = 0; i < L; i++)	// samples' loop
+			        		//fprintf(fdata_all, "%+1.7e\n", emg_signal(0,i));
 
-        				fclose(fdata_all);
+        				//fclose(fdata_all);
 
-				        //Plot the data using gnuplot
-				        sprintf(fullname, "gnuplot -e \"set yrange [-1.5 : 1.5]; plot '/home/pi/EMG_MICO/Testing/%s/%s_%03d.txt' with lines; pause 1; exit\"", directory, gesture_names[ges_num], rep_num+1);
-				        system(fullname);                  
+				        ////Plot the data using gnuplot
+				        //sprintf(fullname, "gnuplot -e \"set yrange [-1.5 : 1.5]; plot '/home/pi/EMG_MICO/Testing/%s/%s_%03d.txt' with lines; pause 1; exit\"", directory, gesture_names[ges_num], rep_num+1);
+				        //system(fullname);                  
 
 
 					
@@ -758,16 +793,31 @@ int main(int argc, char **argv)
 												   zc_aves, zc_covs, gr_aves, gr_covs, &segD,
 												   &feat_wgts, zc_thr, &conf, cl_opt);
 
-                        if(movement == 0)
-                            movement = 4;
+					printf("Movement: %d\n\n", movement);
+					fflush(stdout);
+					bzero(buffer_socket, 10);
+					
+					switch(movement)
+					{
+						case 1:
+							buffer_socket[0] = '1';
+							break;
+						case 2:
+							buffer_socket[0] = '2';
+							break;
+						case 3:
+							buffer_socket[0] = '3';
+							break;
+						case 0:
+							buffer_socket[0] = '4';
+							break;														
+						default:
+							break;
+					}
+					
+					write(sockfd, buffer_socket, strlen(buffer_socket));					
 
-						printf("Movement: %d\n\n", movement);
-						fflush(stdout);
-							
-						if(movement != temp)
-							err_num[ges_num]++;
-
-                        sleep(0.5);
+                    sleep(0.5);
 													
 					}
 					
@@ -789,10 +839,7 @@ int main(int argc, char **argv)
 
 	}  //end of main client loop
 	free(buffer[0]);
-                // Stop continuous mode for ADC
-                waitDRDY();
-                send8bit(CMD_SDATAC); // Stop read data continuous.
-                CS_1();		
+	
 
     endSPI();
 	return 0;
